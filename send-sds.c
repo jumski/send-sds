@@ -172,46 +172,51 @@ send_file(
 
     num_packets = sds_calc_num_packets(file_size);
 
+
     char packet_str[500];
     for (packet_num=0; packet_num < num_packets; ) {
         modded_packet_num = packet_num % 0x80;
         packet_str[0] = '\0';
 
-        printf("\r packet %i / %i    %f%%", packet_num, num_packets, 100.0);
+        float work_done_pct = 100 * ((float) modded_packet_num / (float) num_packets);
+
+        printf("\r packet %i / %i     %f%%", packet_num, num_packets, work_done_pct);
         /* printf("Packet %d\n", modded_packet_num); */
 
-        /* if (__TRACE_SEND_PACKETS) { */
-        /*     printf("%s %s reading packet %d\n", */
-        /*            trace, __FUNCTION__, packet_num); */
-        /* } */
+        if (__TRACE_SEND_PACKETS) {
+            printf("%s %s reading packet %d\n",
+                   trace, __FUNCTION__, packet_num);
+        }
 
         if (!sds_read_packet(fd, buf, sizeof(buf), err)) {
             return 0;
         }
 
-        /* if (__TRACE_SEND_PACKETS) { */
-        /*     printf("%s %s done reading packet %d\n", */
-        /*            trace, __FUNCTION__, packet_num); */
-        /* } */
+        if (__TRACE_SEND_PACKETS) {
+            printf("%s %s done reading packet %d\n",
+                   trace, __FUNCTION__, packet_num);
+        }
 
         /* XXX patch channel number */
         /* XXX patch packet number */
 
-        /* if (__TRACE_SEND_PACKETS) { */
-        /*     printf("%s %s sending packet %d\n", */
-        /*            trace, __FUNCTION__, packet_num); */
-        /* } */
+        if (__TRACE_SEND_PACKETS) {
+            printf("%s %s sending packet %d\n",
+                   trace, __FUNCTION__, packet_num);
+        }
         if (!midi_send(midi, buf, SDS_PACKET_LENGTH, err)) {
             return 0;
         } else {
             sds_serialize_packet(packet_str, buf, SDS_PACKET_LENGTH);
-            /* printf("Sent %s\n", packet_str); */
+            if (__TRACE_SEND_PACKETS) {
+                printf("Sent %s\n", packet_str);
+            }
         }
 
-        /* if (__TRACE_SEND_PACKETS) { */
-        /*     printf("%s %s done sending packet %d\n", */
-        /*            trace, __FUNCTION__, packet_num); */
-        /* } */
+        if (__TRACE_SEND_PACKETS) {
+            printf("%s %s done sending packet %d\n",
+                   trace, __FUNCTION__, packet_num);
+        }
 
         if (!get_response(midi, channel_num, modded_packet_num, &response)) {
             fprintf(stderr,
@@ -219,9 +224,11 @@ send_file(
                     response_to_string(response.type));
             return 0;
         } else {
-            /* printf("Received %s for packet %d\n", */
-            /*        response_to_string(response.type), */
-            /*        modded_packet_num); */
+            if (__TRACE_SEND_PACKETS) {
+                printf("Received %s for packet %d\n",
+                    response_to_string(response.type),
+                    modded_packet_num);
+            }
         }
 
         /* if (response != RESPONSE_ACK) { */
